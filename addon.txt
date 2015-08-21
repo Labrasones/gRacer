@@ -1,0 +1,9 @@
+"AddonInfo"
+{
+	"name"        "gRacer"
+	"version"     "0"
+	"author_name" "Labrasones"
+	"author_url"  "www.ingeniousgaming.co"
+	"info"        "GMod Race Track builder, timer, and leaderboard system"
+	"override"    "0"
+}
