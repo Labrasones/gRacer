@@ -14,11 +14,11 @@ AddCSLuaFile(GRD.."/tool_screen.lua")
 include( "weapons/gmod_tool/stools/"..GRD.."/tool_screen.lua" )
 
 function TOOL:LeftClick( trace )
-	--Add the trace hit as a waypoint
+	
 end
 
 function TOOL:RightClick( trace )
-	--Remove the waypoint near the trace hit
+	
 end
 
 function TOOL:Reload( trace )
@@ -38,5 +38,8 @@ if CLIENT then
 	function TOOL:DrawToolScreen( w, h )
 		GRD_DrawToolScreen()
 	end
+	
+	function TOOL:DrawHUD()
+	
+	end
 end
-\ No newline at end of file

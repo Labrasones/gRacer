@@ -1,5 +1,7 @@
 -- Include things to make sure they are avalible here
 include("globals.lua")
+include("drive/drive_designer.lua")
+
 -- Add the gRacer tool category
 if CLIENT then
 	gRacer.CustomToolCategory = CreateClientConVar( "gracer_tool_category", 1, true, false );
