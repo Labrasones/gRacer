@@ -12,7 +12,7 @@ if SERVER then
 			end
 		else
 			if pl:GetTable()[GRD_ .. "edit_mode"] == true then
-				stopTrackDesigner( pl )
+				endTrackDesigner( pl )
 			end
 		end
 	end)
@@ -24,7 +24,7 @@ if CLIENT then
 	include("designer/track_overview_panel.lua")
 	concommand.Add( GRD_ .. "open_designer", function( ply, cmd, args )
 		if gRacer["design_panel"] == nil then
-			gRacer["design_panel"] = vgui.Create("GRD_design_panel")
+			gRacer["design_panel"] = vgui.Create(GRD_ .. "design_panel")
 		else
 			gRacer["design_panel"]:SetVisible( true )
 		end

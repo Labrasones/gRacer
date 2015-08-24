@@ -8,7 +8,6 @@
                      __/ |             __/ |                 __/ |    
                     |___/             |___/                 |___/     
 --]]
-
 if CLIENT then
 	language.Add( "spawnmenu.tools.gracer", "gRacer" );
 	language.Add("Tool."..GRD..".name", "gRacer Track Designer")

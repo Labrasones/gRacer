@@ -44,7 +44,7 @@ function init_g_racer()
 	local Segments = 12
 	
 	--local trackSurface = Material( "models/debug/debugwhite" )
-	local trackSurface = Material( "gui/track" )
+	local trackSurface = Material( "g_racer/track_designer/track" )
 
 	local verts = {}
 	local vertCount = 0

@@ -2,17 +2,25 @@ AddCSLuaFile()
 
 DEFINE_BASECLASS( "drive_base" );
 
--- Essentially a copy of the noclip drive mode, tweaked movement to improve feeling of control
 drive.Register( "drive_" .. GRD_ .. "designer", 
 {
+	--
+	-- Called on creation
+	--
+	Init = function( self )
+		self.Speed = 0.01
+		self.SpeedDamp = 0.75
+		self.MaxVel = 50
+		self.TargHeight = self.Player:GetPos().z + 80
+		self.HitHeight = self.Player:GetPos().z
+	end,
+
 	--
 	-- Called before each move. You should use your entity and cmd to 
 	-- fill mv with information you need for your move.
 	--
 	StartMove =  function( self, mv, cmd )
-		--
 		-- Update move position and velocity from our entity
-		--
 		mv:SetOrigin( self.Entity:GetNetworkOrigin() )
 		mv:SetVelocity( self.Entity:GetAbsVelocity() )
 
@@ -24,54 +32,80 @@ drive.Register( "drive_" .. GRD_ .. "designer",
 	-- You should try to only change mv.
 	--
 	Move = function( self, mv )
-
-		--
 		-- Set up a speed, go faster if shift is held down
-		--
-		local speed = 0.0005 * FrameTime()
-		if ( mv:KeyDown( IN_SPEED ) ) then speed = 0.005 * FrameTime() end
+		local speed = self.Speed
+		if ( mv:KeyDown( IN_SPEED ) ) then 
+			speed = self.Speed * 10 
+		end
+		speed = speed * FrameTime()
 
-		--
 		-- Get information from the movedata
-		--
 		local ang = mv:GetMoveAngles()
 		local pos = mv:GetOrigin()
 		local vel = mv:GetVelocity()
-
-		--
-		-- Add velocities. This can seem complicated. On the first line
-		-- we're basically saying get the forward vector, then multiply it
-		-- by our forward speed (which will be > 0 if we're holding W, < 0 if we're
-		-- holding S and 0 if we're holding neither) - and add that to velocity.
-		-- We do that for right and up too, which gives us our free movement.
-		--
-		vel = vel + ang:Forward() * mv:GetForwardSpeed() * speed
-		vel = vel + ang:Right() * mv:GetSideSpeed() * speed
-		vel = vel + ang:Up() * mv:GetUpSpeed() * speed
-
-		--
-		-- We don't want our velocity to get out of hand so we apply
-		-- a little bit of air resistance. If no keys are down we apply
-		-- more resistance so we slow down more.
-		--
-		if ( math.abs(mv:GetForwardSpeed()) + math.abs(mv:GetSideSpeed()) + math.abs(mv:GetUpSpeed()) < 0.1 ) then
-			vel = vel * 0.90
-		else
-			vel = vel * 0.99
+		
+		-- Get the additional velocity from the player
+		local moveVel = Vector(mv:GetForwardSpeed()*speed, (-mv:GetSideSpeed())*speed, 0)
+		moveVel:Rotate(Angle(0,ang.yaw,0))
+		vel = vel + moveVel
+		
+		-- Set the target height
+		local heightSpeed = 7
+		if ( mv:KeyDown( IN_SPEED ) ) then 
+			heightSpeed = 15
 		end
-
-		--
+		if mv:KeyDown( IN_DUCK ) then -- Go down
+			self.TargHeight = self.TargHeight - heightSpeed
+		elseif mv:KeyDown( IN_JUMP ) then -- Go up
+			self.TargHeight = self.TargHeight + heightSpeed
+		else
+			-- Trace to follow the ground on light curves
+			local startPos = self.Entity:GetPos()
+			local length = 500 -- Maximum distance from ground to consider still following it's curves
+			local dir = Vector(0,0,-1)
+			local mins = self.Entity:OBBMins() * 1.5
+			local maxs = self.Entity:OBBMaxs() * 1.5
+			local trData = {
+				start = startPos,
+				endpos = startPos + (dir*length),
+				maxs = maxs,
+				mins = mins,
+				filter = self.Entity,
+				mask = MASK_PLAYERSOLID_BRUSHONLY
+			}
+			local tr = util.TraceHull( trData )
+			
+			local x = tr.HitPos.z - self.HitHeight
+			self.HitHeight = tr.HitPos.z
+			if math.abs(x) < 50 and tr.Hit then
+				self.TargHeight = self.TargHeight + x
+			end
+			
+		end
+		
+		-- Slow us down
+		if ( math.abs(mv:GetForwardSpeed()) + math.abs(mv:GetSideSpeed()) + math.abs(mv:GetUpSpeed()) < 0.01 ) then
+			vel = vel * self.SpeedDamp
+		else
+			vel = vel * (self.SpeedDamp*1.1)
+		end
+		
+		-- Clamp the vel
+		if vel:Length() > self.MaxVel then
+			vel = self.MaxVel * vel:GetNormalized()
+		end
+		
+		-- Move towards target height
+			-- Must be after the slow down and clamp. Can't allow the target height to grow faster than we can move
+		vel.z = (self.TargHeight - self.Entity:GetPos().z)
+		
 		-- Add the velocity to the position (this is the movement)
-		--
 		pos = pos + vel
 
-		--
 		-- We don't set the newly calculated values on the entity itself
 		-- we instead store them in the movedata. These get applied in FinishMove.
-		--
 		mv:SetVelocity( vel )
 		mv:SetOrigin( pos )
-
 	end,
 
 	--
@@ -98,18 +132,12 @@ drive.Register( "drive_" .. GRD_ .. "designer",
 			self.Entity:GetPhysicsObject():EnableMotion( false )
 
 		end
-
 	end,
 
 	--
 	-- Calculates the view when driving the entity
 	--
 	CalcView =  function( self, view )
-
-		--
-		-- Use the utility method on drive_base.lua to give us a 3rd person view
-		--
-
-	end,
-
+		
+	end
 }, "drive_base" );

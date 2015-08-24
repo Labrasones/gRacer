@@ -8,8 +8,7 @@ local GRD_design_panel = {}
 function GRD_design_panel:Init()
 	local h = ScrH() * 0.7
 	local w = ScrW() * 0.7
-	
-	self:SetTitle("Track Design Overview")
+	self:SetTitle("Track Design Management")
 	self:SetSize(w, h)
 	self:SetPos(ScrW()*0.5 - w*0.5, ScrH()*0.5 - h*0.5)
 	self:SetVisible( true )
@@ -23,9 +22,9 @@ function GRD_design_panel:Init()
 	bCancel:SetText("Close")
 	self.bCancel = bCancel
 	
-	--[[local bCreateNew = vgui.Create("DButton", self)
+	local bCreateNew = vgui.Create("DButton", self)
 	bCreateNew:SetText("Create New Track")
-	self.bCreateNew = bCreateNew--]]
+	self.bCreateNew = bCreateNew
 	
 	self:Invalidate()
 	self:SetupEvents()
@@ -38,8 +37,8 @@ function GRD_design_panel:Invalidate()
 	self.bCancel:SetSize(100,40)
 	self.bCancel:SetPos(w - 150, h - 60)
 	
-	--self.bCreateNew:SetSize(400,40)
-	--self.bCreateNew:SetPos(200, h - 60)
+	self.bCreateNew:SetSize(400,40)
+	self.bCreateNew:SetPos(w/2 - 200, h - 60)
 end
  
 function GRD_design_panel:SetupEvents()
@@ -47,9 +46,10 @@ function GRD_design_panel:SetupEvents()
 		self:Close()
 	end
 
-	--[[self.bCreateNew.DoClick = function()
+	self.bCreateNew.DoClick = function()
 		startTrackDesigner()
-	end--]]
+		self:Close()
+	end
 end
  
 function GRD_design_panel:PerformLayout()
@@ -57,4 +57,4 @@ function GRD_design_panel:PerformLayout()
 	self:Invalidate();
 end
 
-vgui.Register("GRD_design_panel", GRD_design_panel, "DFrame")
+vgui.Register(GRD_ .. "design_panel", GRD_design_panel, "DFrame")
