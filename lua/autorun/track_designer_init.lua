@@ -20,8 +20,11 @@ end
 
 if CLIENT then
 -- Client only initialization
+	include("designer/widget.lua")
+	include("designer/edit_mode_panels.lua")
 	include("designer/design_panel.lua")
 	include("designer/track_overview_panel.lua")
+	include("designer/edit_manipulation.lua")
 	concommand.Add( GRD_ .. "open_designer", function( ply, cmd, args )
 		if gRacer["design_panel"] == nil then
 			gRacer["design_panel"] = vgui.Create(GRD_ .. "design_panel")

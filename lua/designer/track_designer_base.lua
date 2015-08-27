@@ -1,3 +1,4 @@
+AddCSLuaFile()
 -- Shared code
 
 -- Server only code
@@ -8,8 +9,8 @@ if SERVER then
 			local pawn = ents.Create("prop_physics")
 			pawn:SetModel("models/Combine_Scanner.mdl")
 			pawn:SetPos(pl:GetPos() + Vector(0,0,40))
+			pawn:SetAngles(pl:EyeAngles())
 			pawn:Spawn()
-			pawn:SetCollisionGroup(COLLISION_GROUP_WORLD)
 			pawn:SetCreator(pl)
 			pl:GetTable()[GRD_ .. "pawn"] = pawn
 			
@@ -40,12 +41,34 @@ if CLIENT then
 		net.Start( GRD_ .. "set_client_editmode" )
 			net.WriteBool(true)
 		net.SendToServer()
+		gRacer.waypoints = {}
+		gRacer.waypoints[1] = WaypointWidget:Create()
+		gRacer.waypoints[1]:SetModel("models/props_gameplay/cap_point_base.mdl")
+		gRacer.waypoints[1]:SetPos(Vector(-500,0,0))
+		gRacer.waypoints[1]:SetName("Hammerhead")
+		gRacer.waypoints[2] = WaypointWidget:Create()
+		gRacer.waypoints[2]:SetModel("models/props_gameplay/cap_point_base.mdl")
+		gRacer.waypoints[2]:SetPos(Vector(0,500,0))
+		gRacer.waypoints[2]:SetName("Waldorf")
+		gRacer.waypoints[3] = WaypointWidget:Create()
+		gRacer.waypoints[3]:SetModel("models/props_gameplay/cap_point_base.mdl")
+		gRacer.waypoints[3]:SetPos(Vector(500,500,50))
+		gRacer.waypoints[3]:SetName("Airtime")
+		
+		gRacer.selectionGroup = SelectionGroup:Create("edit_widgets")
+		gRacer.translateWidget = TranslateWidget:Create()
 	end
 	function endTrackDesigner()
 		-- Tell the server to remove us from edit mode
 		net.Start( GRD_ .. "set_client_editmode" )
 			net.WriteBool(false)
 		net.SendToServer()
+		
+		-- Remove the waypoints from the world
+		for index, waypoint in pairs(gRacer.waypoints) do
+			waypoint:RemoveModel()
+		end
+		gRacer.translateWidget:Hide()
 	end
 	-- The server will let us know when we get into edit mode, set a callback
 	net.Receive( GRD_ .. "set_client_editmode", function( len ) -- Set up the event handlers for edit mode
@@ -58,27 +81,19 @@ if CLIENT then
 				gui.EnableScreenClicker( not input.IsMouseDown( MOUSE_RIGHT ) )
 			end )
 			hook.Add("GUIMousePressed", GRD_ .. "handle_mouseclick", designerHandleMousePress)
-			--hook.Add("PostDrawOpaqueRenderables", GRD_ .. "post_draw", designerPostDraw)
 			hook.Add("CalcView", GRD_ .. "calc_view", designerCalcView)
-			
-			local model = "models/props_interiors/Furniture_Couch02a.mdl"
-			gRacer["Test"] = ClientsideModel(model)
-			gRacer["Test"]:SetModel(model)
-			gRacer["Test"]:SetSolid(SOLID_OBB)
-			gRacer["Test"]:Spawn()
-			gRacer["Test"]:SetPos(LocalPlayer():GetPos() + Vector(0,70,70))
-			print(gRacer["Test"]:OBBMaxs())
-			
+			-- Create the VGUI panels for control
+			gRacer["edit_waypoints"] = vgui.Create(GRD_ .. "edit_waypoints")
 		else -- We where removed from edit mode, unhook handlers
 			gui.EnableScreenClicker(false)
 			hook.Remove( "KeyPress", GRD_ .. "handle_keypress")
 			hook.Remove( "KeyRelease", GRD_ .. "handle_keyrelease")
 			hook.Remove( "Think", GRD_ .. "think")
 			hook.Remove("GUIMousePressed", GRD_ .. "handle_mouseclick")
-			--hook.Remove("PostDrawOpaqueRenderables", GRD_ .. "post_draw")
 			hook.Remove("CalcView", GRD_ .. "calc_view")
+			hook.Remove("PreDrawHalos", "draw_selected_widget_halos")
 			
-			gRacer["Test"]:Remove()
+			gRacer["edit_waypoints"]:Close()
 		end
 	end)
 	function designerCalcView(pl, viewPos, viewAng, fov, nearZ, farZ)
@@ -86,18 +101,18 @@ if CLIENT then
 		LocalPlayer():GetTable()["cam_pos"] = viewPos
 		LocalPlayer():GetTable()["cam_angle"] = viewAng
 	end
-	function designerPostDraw(bDrawDepth, bDrawSkybox)
-		--gRacer["Test"]:DrawModel()
-	end
 	
 	function designerHandleMousePress( mouse, aimVec)
+		-- Clear focus from VGUIs
+		gRacer["edit_waypoints"]:MakeUnpopped()
 		if mouse == MOUSE_LEFT then
-			local camEnt = LocalPlayer():GetViewEntity()
-			local testObj = gRacer["Test"]
-			
-			local hit, norm, fraction = util.IntersectRayWithOBB( camEnt:GetPos(), aimVec*99999, testObj:GetPos(), testObj:GetAngles(), testObj:OBBMins(), testObj:OBBMaxs() )
-			if hit then
-				-- Hit an object, add it to the list to consider
+			camEnt = LocalPlayer():GetViewEntity()
+			local tr = pickWaypoint( camEnt:GetPos(), aimVec, gRacer.waypoints)
+			if tr.Waypoint then
+				gRacer.selectionGroup:ClearSelection()
+				gRacer.selectionGroup:AddToSelection(tr.Waypoint)
+				gRacer.selectedWidget = tr.Waypoint
+				gRacer.translateWidget:SetPos( tr.Waypoint:GetPos() )
 			end
 		end
 	end

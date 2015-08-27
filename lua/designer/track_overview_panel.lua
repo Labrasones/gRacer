@@ -2,6 +2,7 @@
 --[[
 	Displays options to create, modify, and delete tracks
 ]]--
+AddCSLuaFile()
 if SERVER then return end
 
 local GRD_track_overview_panel = {}
@@ -55,6 +56,12 @@ end
 function GRD_track_overview_panel:SetupEvents()
 	self.bCancel.DoClick = function()
 		-- Leave edit mode
+		endTrackDesigner()
+		self:Close()
+	end
+	
+	self.bContinue.DoClick = function()
+		-- Return to edit mode
 		endTrackDesigner()
 		self:Close()
 	end

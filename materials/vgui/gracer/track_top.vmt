@@ -1,0 +1,5 @@
+"UnlitGeneric"
+{
+	"$basetexture" "vgui/gracer/track_top"
+	"$translucent" 1
+}
