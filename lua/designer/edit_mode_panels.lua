@@ -104,19 +104,16 @@ function GRD_edit_waypoints:SetupEvents()
 end
 
 function GRD_edit_waypoints:PushWaypoint( waypoint, index )
-	print("Pushing waypoint: " .. waypoint:GetName())
 	local waypointPanel = vgui.Create(GRD_ .. "edit_waypoint_panel", self.WaypointEntries)
 	waypointPanel:SetWaypoint( waypoint, index )
 	self.WaypointEntries:Add(waypointPanel)
 end
 
 function GRD_edit_waypoints:InsertWaypoint( waypoint, index )
-	print("Inserting waypoint: " .. waypoint.name .. " at: " .. index)
 	
 end
 
 function GRD_edit_waypoints:RemoveWaypoint( waypoint, index )
-	print("Removing waypoint: " .. waypoint.name .. " at: " .. index)
 	
 end
 vgui.Register(GRD_ .. "edit_waypoints", GRD_edit_waypoints, "DFrame")

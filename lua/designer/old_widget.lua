@@ -5,19 +5,17 @@
 	| |/ |/ / /_/ / /  / / /_/ /    | |/ |/ / / /_/ / /_/ /  __/ /_(__  ) 
 	|__/|__/\____/_/  /_/\__,_/     |__/|__/_/\__,_/\__, /\___/\__/____/  
 												   /____/
-	Class definition of edit mode widgets which exist in 3D space as part of the world
+	Class definitions of edit mode widgets which exist in 3D space as part of the world
 	NOTE: These classes are only avaliable on the client
 --]]
 AddCSLuaFile()
 if SERVER then return end
 
--- Base widget. Holds a CSEnt, has a position, angle, scale, and OBB
+-- Base widget
 Widget = 
 {
 	pos = Vector(0, 0, 0),
-	ang = Angle(0, 0, 0),
-	OBBMaxs = nil,
-	OBBMins = nil
+	ang = Angle(0, 0, 0)
 }
 function Widget:Create()
 	local object = {}
@@ -36,25 +34,15 @@ end
 function Widget:GetAng()
 	return self.ang
 end
-function Widget:SetOBBMaxs( maxs )
-	self.OBBMaxs = maxs
-end
-function Widget:SetOBBMins( mins )
-	self.OBBMins = mins
-end
-function Widget:GetOBBMaxs()
-	return self.OBBMaxs
-end
-function Widget:GetOBBMins()
-	return self.OBBMins
-end
 
 -- ModelWidget, a widget with a specified model to render
 ModelWidget = 
 {
 	modelName = "",
 	csent = nil,
-	modelScale = Vector(0, 0, 0)
+	modelScale = Vector(0, 0, 0),
+	OBBMaxs = nil,
+	OBBMins = nil
 }
 setmetatable(ModelWidget, {__index = Widget} )
 function ModelWidget:Create()
@@ -65,9 +53,9 @@ end
 function ModelWidget:SetModel( modelName )
 	self.csent = ClientsideModel(modelName)
 	self.csent:SetModel(modelName) -- NOTE: Must call this as well, and with the same model as ClientsideModel or we'll have no OBB. Feels like engine bug!
+	self.modelName = modelName
 	self.SetOBBMaxs(self.csent:OBBMaxs())
 	self.SetOBBMins(self.csent:OBBMins())
-	self.modelName = modelName
 end
 function ModelWidget:GetModel( modelName )
 	return self.modelName
@@ -79,7 +67,18 @@ end
 function ModelWidget:RemoveModel()
 	self.csent:Remove()
 end
-
+function ModelWidget:SetOBBMaxs( maxs )
+	self.OBBMaxs = maxs
+end
+function ModelWidget:SetOBBMins( mins )
+	self.OBBMins = mins
+end
+function ModelWidget:GetOBBMaxs()
+	return self.OBBMaxs
+end
+function ModelWidget:GetOBBMins()
+	return self.OBBMins
+end
 -- Selection group class
 SelectionGroup = 
 {
@@ -103,17 +102,17 @@ end
 function SelectionGroup:AddToSelection( selectableWidget )
 	local index = table.insert(self.selectedWidgets, selectableWidget) -- Insert the selected widget
 	self.selectedCSEnts[index] = selectableWidget.csent
-	self:ResetRenderHook()
+	--self:ResetRenderHook()
 end
 function SelectionGroup:RemoveFromSelection( selectableWidget )
 	table.RemoveByValue(self.selectedWidgets, selectableWidget) -- Remove the specified widget
 	self.selectedCSEnts[index] = nil
-	self:ResetRenderHook()
+	--self:ResetRenderHook()
 end
 function SelectionGroup:ClearSelection()
 	table.Empty(self.selectedWidgets) -- Reset the table
 	table.Empty(self.selectedCSEnts)
-	self:ResetRenderHook()
+	--self:ResetRenderHook()
 end
 function SelectionGroup:IsWidgetSelected( widgetToCheck )
 	local key = table.KeyFromValue( self.selectedWidgets, widgetToCheck )
@@ -124,16 +123,16 @@ function SelectionGroup:IsWidgetSelected( widgetToCheck )
 end
 function SelectionGroup:SetRenderParams( renderTable )
 	table.Merge(self.renderParams, renderTable)
-	self:ResetRenderHook()
+	--self:ResetRenderHook()
 end
 function SelectionGroup:ResetRenderHook()
 	local this = self
-	hook.Add( "PreDrawHalos", "group_" .. this.name .. "_add_selection_halo", function()
-		halo.Add( self.selectedCSEnts, self.renderParams.colour, 
-					self.renderParams.burx, 
-					self.renderParams.bury, 
-					self.renderParams.passes,
-					true, self.renderParams.ignorez)
+	hook.Add( "PreDrawHalos", "group_" .. self.name .. "_add_selection_halo", function()
+		halo.Add( this.selectedCSEnts, this.renderParams.colour, 
+					this.renderParams.burx, 
+					this.renderParams.bury, 
+					this.renderParams.passes,
+					true, this.renderParams.ignorez)
 	end )
 end
 
@@ -142,7 +141,7 @@ SelectableWidget =
 	selected = false,
 	selectionGroup = nil
 }
-setmetatable( SelectableWidget, { __index = Widget })
+setmetatable( SelectableWidget, { __index = ModelWidget })
 function SelectableWidget:Create( selectionGroup )
 	local object = {}
 	setmetatable( object, { __index = SelectableWidget } )
@@ -157,28 +156,6 @@ function SelectableWidget:SetSelected( selected )
 	self.selected = selected
 end
 
--- WaypointWidget: A selectable widget with a client side model. Is a manifestation of a waypoint in the current track
-WaypointWidget = 
-{
-	waypoint = nil,
-	name = ""
-}
-local indexTable = {}
-setmetatable(indexTable, {__index = SelectableWidget})
-table.Merge(indexTable, ModelWidget)
-setmetatable(WaypointWidget, {__index = indexTable})
-function WaypointWidget:Create( waypoint )
-	local object = {}
-	setmetatable( object, { __index = WaypointWidget} )
-	object.waypoint = waypoint
-	return object
-end
-function WaypointWidget:SetName( name )
-	self.name = name
-end
-function WaypointWidget:GetName( name )
-	return self.name
-end
 
 -- TranslateComponent: Used in the TranslateWidget
 TranslateComponent = 
